@@ -26,23 +26,53 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
 
   const openCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported on this device');
+      }
+
+      // Request camera permissions with mobile-optimized settings
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' }, // Use back camera
+          width: { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+          aspectRatio: { ideal: 16/9 }
+        },
+        audio: false
+      };
+
+      // Try to get user media
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       setStream(mediaStream);
       setIsCameraOpen(true);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play().catch(err => {
+            console.warn('Video autoplay failed:', err);
+          });
+        };
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
-      setError('Unable to access camera. Please check permissions.');
+      
+      // Provide specific error messages for different scenarios
+      if (err.name === 'NotAllowedError') {
+        setError('Camera access denied. Please allow camera permissions and try again.');
+      } else if (err.name === 'NotFoundError') {
+        setError('No camera found on this device.');
+      } else if (err.name === 'NotSupportedError') {
+        setError('Camera not supported on this device.');
+      } else if (err.name === 'NotReadableError') {
+        setError('Camera is being used by another application.');
+      } else {
+        setError('Unable to access camera. Please check permissions and try again.');
+      }
     }
   };
 
@@ -130,19 +160,27 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="w-full h-64 object-cover rounded-lg"
+            style={{ transform: 'scaleX(-1)' }} // Mirror the video for better UX
           />
           <canvas ref={canvasRef} className="hidden" />
+          
+          {/* Camera overlay with instructions */}
+          <div className="absolute top-2 left-2 right-2 bg-black bg-opacity-50 text-white text-xs p-2 rounded">
+            📱 Position your Pokémon card in the frame
+          </div>
+          
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
             <button
               onClick={capturePhoto}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-lg"
             >
               📷 Capture
             </button>
             <button
               onClick={closeCamera}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium shadow-lg"
             >
               Cancel
             </button>
@@ -160,12 +198,19 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             📁 Upload Image
           </button>
           
-          <button
-            onClick={openCamera}
-            className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
-          >
-            📷 Take Photo
-          </button>
+          {/* Check if camera is supported before showing camera button */}
+          {navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? (
+            <button
+              onClick={openCamera}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+            >
+              📷 Take Photo
+            </button>
+          ) : (
+            <div className="w-full bg-gray-300 text-gray-600 py-3 px-4 rounded-lg text-center text-sm">
+              📷 Camera not supported on this device
+            </div>
+          )}
         </div>
       )}
 
@@ -206,7 +251,16 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
       {/* Instructions */}
       <div className="mt-6 text-sm text-gray-600 text-center">
         <p className="mb-2">📱 Upload an image or take a photo of your Pokémon card</p>
-        <p className="text-xs">Make sure the card is well-lit and clearly visible</p>
+        <p className="text-xs mb-2">Make sure the card is well-lit and clearly visible</p>
+        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+          <p className="font-semibold mb-1">📱 Mobile Camera Tips:</p>
+          <ul className="text-left space-y-1">
+            <li>• Allow camera permissions when prompted</li>
+            <li>• Use the back camera for better quality</li>
+            <li>• Ensure good lighting</li>
+            <li>• Hold phone steady</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
