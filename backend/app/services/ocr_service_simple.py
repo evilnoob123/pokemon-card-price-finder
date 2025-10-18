@@ -1,5 +1,6 @@
 import logging
 import re
+import random
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,6 @@ class OCRService:
                 "Arceus"
             ]
             
-            import random
             card_name = random.choice(mock_card_names)
             
             logger.info(f"Mock OCR extracted card name: {card_name}")
