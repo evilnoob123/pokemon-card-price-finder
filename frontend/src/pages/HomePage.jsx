@@ -8,16 +8,22 @@ const HomePage = () => {
   const [priceHistory, setPriceHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastImageFile, setLastImageFile] = useState(null);
 
   const handleImageCapture = async (imageFile) => {
     setIsLoading(true);
     setError(null);
     setCardData(null);
     setPriceHistory([]);
+    setShowConfirmation(false);
+    setLastImageFile(imageFile);
 
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
+      formData.append('retry_count', retryCount.toString()); // Send retry count to backend
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pokemoncardpricefinder.onrender.com';
       const response = await fetch(`${apiUrl}/api/card/scan`, {
@@ -42,6 +48,9 @@ const HomePage = () => {
         const mockPriceHistory = generateMockPriceHistory(result.latest_market_price);
         setPriceHistory(mockPriceHistory);
       }
+      
+      // Show confirmation dialog
+      setShowConfirmation(true);
     } catch (err) {
       console.error('Error scanning card:', err);
       setError(err.message || 'Failed to scan card');
@@ -73,6 +82,30 @@ const HomePage = () => {
     }
     
     return history;
+  };
+
+  const handleConfirmCard = () => {
+    setShowConfirmation(false);
+    setRetryCount(0);
+  };
+
+  const handleRetryCard = async () => {
+    if (!lastImageFile) return;
+    
+    setRetryCount(prev => prev + 1);
+    setShowConfirmation(false);
+    
+    // Retry with the same image
+    await handleImageCapture(lastImageFile);
+  };
+
+  const handleNewScan = () => {
+    setCardData(null);
+    setPriceHistory([]);
+    setShowConfirmation(false);
+    setRetryCount(0);
+    setLastImageFile(null);
+    setError(null);
   };
 
   return (
@@ -154,6 +187,11 @@ const HomePage = () => {
             <CardInfoDisplay 
               cardData={cardData}
               isLoading={isLoading}
+              showConfirmation={showConfirmation}
+              onConfirm={handleConfirmCard}
+              onRetry={handleRetryCard}
+              onNewScan={handleNewScan}
+              retryCount={retryCount}
             />
             
             <PriceChart 

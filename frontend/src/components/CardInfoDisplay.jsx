@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CardInfoDisplay = ({ cardData, isLoading }) => {
+const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onRetry, onNewScan, retryCount }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -176,6 +176,53 @@ const CardInfoDisplay = ({ cardData, isLoading }) => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-center">
+            <div className="text-blue-600 text-2xl mb-2">🤔</div>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              Is this the correct card?
+            </h3>
+            <p className="text-sm text-blue-700 mb-4">
+              We found: <strong>{cardData.card_name}</strong> from {cardData.set_name}
+              {retryCount > 0 && (
+                <span className="block mt-1 text-xs text-blue-600">
+                  (Attempt {retryCount + 1})
+                </span>
+              )}
+            </p>
+            
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={onConfirm}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm flex items-center gap-2"
+              >
+                ✅ Yes, this is correct
+              </button>
+              
+              <button
+                onClick={onRetry}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm flex items-center gap-2"
+              >
+                🔄 Try different card
+              </button>
+              
+              <button
+                onClick={onNewScan}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm flex items-center gap-2"
+              >
+                📷 Scan new image
+              </button>
+            </div>
+            
+            <p className="text-xs text-blue-600 mt-3">
+              If this isn't the right card, we'll try to find the next closest match
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
