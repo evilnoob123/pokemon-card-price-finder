@@ -32,7 +32,7 @@ app = FastAPI(
 )
 
 # Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://pokemon-card-price-finder.vercel.app,https://pokemon-card-price-finder-q69lulmee-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-qj6cbqiq0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-bjb5st0g0-ctrl-collectibles.vercel.app").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://pokemon-card-price-finder.vercel.app,https://pokemon-card-price-finder-q69lulmee-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-qj6cbqiq0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-bjb5st0g0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-5x5jvg0mv-ctrl-collectibles.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -369,7 +369,130 @@ async def scrape_psa_prices(cert_number, card_info):
                 "seller_type": "Mock Data (Scraping Failed)"
             })
         card_info["price_history"] = mock_history
-        logger.info(f"Using fallback mock data for certificate: {cert_number}")
+
+@app.post("/api/card/psa-price-history")
+async def psa_price_history(request_data: dict):
+    """
+    Scrape PSA price history for a specific certificate number.
+    """
+    try:
+        cert_number = request_data.get("cert_number")
+        if not cert_number:
+            return {
+                "error": "Certificate number is required",
+                "status": "error"
+            }
+
+        logger.info(f"Starting PSA price scraping for certificate: {cert_number}")
+        
+        # Scrape PSA website for price history
+        psa_url = f"https://www.psacard.com/cert/{cert_number}/psa"
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        # Use aiohttp with SSL context disabled
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+            async with session.get(psa_url, headers=headers, timeout=15) as response:
+                if response.status != 200:
+                    logger.error(f"PSA website returned status {response.status}")
+                    return {
+                        "error": "Failed to access PSA website",
+                        "status": "error"
+                    }
+                
+                html_content = await response.text()
+        
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Find the sales table - look for various possible table structures
+        sales_table = None
+        
+        # Try different selectors for the sales table
+        table_selectors = [
+            'table[class*="sales"]',
+            'table[class*="similar"]',
+            'table[class*="history"]',
+            'table[id*="sales"]',
+            'table[id*="similar"]',
+            'table[id*="history"]',
+            '.sales-table',
+            '.similar-items-table',
+            '.price-history-table'
+        ]
+        
+        for selector in table_selectors:
+            sales_table = soup.select_one(selector)
+            if sales_table:
+                logger.info(f"Found sales table with selector: {selector}")
+                break
+        
+        price_history = []
+        latest_price = 0
+        
+        if sales_table:
+            rows = sales_table.find_all('tr')[1:]  # Skip header row
+            
+            for row in rows:
+                cells = row.find_all(['td', 'th'])
+                if len(cells) >= 3:
+                    try:
+                        # Extract data from cells
+                        sold_date = cells[0].get_text(strip=True)
+                        sold_price_text = cells[1].get_text(strip=True)
+                        grade = cells[2].get_text(strip=True) if len(cells) > 2 else "Unknown"
+                        seller_type = cells[3].get_text(strip=True) if len(cells) > 3 else "Unknown"
+                        
+                        # Extract price (remove $ and commas)
+                        price_str = sold_price_text.replace('$', '').replace(',', '').replace('USD', '').strip()
+                        
+                        # Try to extract numeric value
+                        import re
+                        price_match = re.search(r'[\d,]+\.?\d*', price_str)
+                        if price_match:
+                            sold_price = float(price_match.group().replace(',', ''))
+                            
+                            price_history.append({
+                                "date": sold_date,
+                                "price": sold_price,
+                                "grade": grade,
+                                "seller_type": seller_type
+                            })
+                            
+                            if sold_price > latest_price:
+                                latest_price = sold_price
+                                
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"Error parsing price row: {e}")
+                        continue
+        
+        if price_history:
+            logger.info(f"Successfully scraped {len(price_history)} price records for certificate: {cert_number}")
+            return {
+                "status": "success",
+                "certificate": cert_number,
+                "price_history": price_history,
+                "latest_price": latest_price,
+                "total_records": len(price_history)
+            }
+        else:
+            logger.warning(f"No price history found for certificate: {cert_number}")
+            return {
+                "error": "No sales history found for this certificate",
+                "status": "error"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error scraping PSA price history for certificate {cert_number}: {str(e)}")
+        return {
+            "error": f"Failed to scrape price history: {str(e)}",
+            "status": "error"
+        }
 
 if __name__ == "__main__":
     uvicorn.run(
