@@ -261,9 +261,20 @@ async def psa_lookup(request_data: dict):
             if image_url:
                 card_info["image_url"] = image_url
                 logger.info(f"PSA card image retrieved for certificate: {cert_number}")
+            else:
+                # Fallback: Try to scrape PSA page for image or use placeholder
+                scraped_image_url = await scrape_psa_page_for_image(cert_number)
+                if scraped_image_url:
+                    card_info["image_url"] = scraped_image_url
+                    logger.info(f"PSA card image scraped from page for certificate: {cert_number}")
+                else:
+                    # Use a placeholder image for PSA cards
+                    card_info["image_url"] = "https://via.placeholder.com/300x420/1f2937/ffffff?text=PSA+Card+Image"
+                    logger.info(f"Using placeholder image for certificate: {cert_number}")
         except Exception as e:
             logger.warning(f"Failed to get PSA card image for certificate {cert_number}: {str(e)}")
-            card_info["image_url"] = ""
+            # Use a placeholder image
+            card_info["image_url"] = "https://via.placeholder.com/300x420/1f2937/ffffff?text=PSA+Card+Image"
         
         logger.info(f"PSA lookup completed for certificate: {cert_number}")
         
@@ -306,8 +317,14 @@ async def get_psa_card_image(cert_number):
                     logger.warning(f"No images found for certificate {cert_number}")
                     return None
                 
+                if response.status == 500:
+                    logger.warning(f"PSA Images API returned 500 error for certificate {cert_number} - images may not be available")
+                    return None
+                
                 if response.status != 200:
                     logger.error(f"PSA Images API returned status {response.status}")
+                    response_text = await response.text()
+                    logger.error(f"PSA Images API error response: {response_text}")
                     return None
                 
                 images_data = await response.json()
@@ -332,6 +349,71 @@ async def get_psa_card_image(cert_number):
                 
     except Exception as e:
         logger.error(f"Error getting PSA card image for certificate {cert_number}: {str(e)}")
+        return None
+
+async def scrape_psa_page_for_image(cert_number):
+    """
+    Scrape PSA page to find card image URL.
+    """
+    try:
+        logger.info(f"Scraping PSA page for image: {cert_number}")
+        
+        # Scrape PSA website for card image
+        psa_url = f"https://www.psacard.com/cert/{cert_number}/psa"
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        # Use aiohttp with SSL context disabled
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+            async with session.get(psa_url, headers=headers, timeout=15) as response:
+                if response.status != 200:
+                    logger.error(f"PSA page returned status {response.status}")
+                    return None
+                
+                html_content = await response.text()
+        
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Look for card images in various possible locations
+        image_selectors = [
+            'img[src*="card"]',
+            'img[src*="cert"]',
+            'img[class*="card"]',
+            'img[class*="cert"]',
+            'img[class*="image"]',
+            '.card-image img',
+            '.cert-image img',
+            '.psa-image img',
+            'img[alt*="card"]',
+            'img[alt*="cert"]'
+        ]
+        
+        for selector in image_selectors:
+            img_element = soup.select_one(selector)
+            if img_element and img_element.get('src'):
+                img_src = img_element.get('src')
+                # Convert relative URLs to absolute
+                if img_src.startswith('//'):
+                    img_src = 'https:' + img_src
+                elif img_src.startswith('/'):
+                    img_src = 'https://www.psacard.com' + img_src
+                elif not img_src.startswith('http'):
+                    img_src = 'https://www.psacard.com/' + img_src
+                
+                logger.info(f"Found PSA card image with selector {selector}: {img_src}")
+                return img_src
+        
+        logger.warning(f"No card image found on PSA page for certificate: {cert_number}")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error scraping PSA page for image {cert_number}: {str(e)}")
         return None
 
 async def scrape_psa_prices(cert_number, card_info):
