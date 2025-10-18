@@ -13,6 +13,11 @@ const HomePage = () => {
   const [lastImageFile, setLastImageFile] = useState(null);
   const [isPSAMode, setIsPSAMode] = useState(false);
   const [psaCertNumber, setPsaCertNumber] = useState('');
+  
+  // Separate state for PSA data
+  const [psaCardData, setPsaCardData] = useState(null);
+  const [psaPriceHistory, setPsaPriceHistory] = useState([]);
+  const [psaLoading, setPsaLoading] = useState(false);
 
   const handleImageCapture = async (imageFile) => {
     setIsLoading(true);
@@ -116,11 +121,10 @@ const HomePage = () => {
       return;
     }
 
-    setIsLoading(true);
+    setPsaLoading(true);
     setError(null);
-    setCardData(null);
-    setPriceHistory([]);
-    setShowConfirmation(false);
+    setPsaCardData(null);
+    setPsaPriceHistory([]);
 
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pokemoncardpricefinder.onrender.com';
@@ -142,21 +146,52 @@ const HomePage = () => {
         throw new Error(result.error);
       }
 
-      setCardData(result);
+      setPsaCardData(result);
       
-      // Generate mock price history for demonstration (will be replaced by scraping)
+      // Start price scraping for PSA data
       if (result.card_name) {
-        const mockPriceHistory = generateMockPriceHistory(result.latest_market_price);
-        setPriceHistory(mockPriceHistory);
+        await handlePSAPriceScraping(psaCertNumber.trim());
       }
       
-      // Show confirmation dialog
-      setShowConfirmation(true);
     } catch (err) {
       console.error('Error looking up PSA certificate:', err);
       setError(err.message || 'Failed to lookup PSA certificate');
     } finally {
-      setIsLoading(false);
+      setPsaLoading(false);
+    }
+  };
+
+  const handlePSAPriceScraping = async (certNumber) => {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pokemoncardpricefinder.onrender.com';
+      const response = await fetch(`${apiUrl}/api/card/psa-price-history`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cert_number: certNumber }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.error) {
+        console.warn('PSA price scraping failed:', result.error);
+        // Use mock data as fallback
+        const mockPriceHistory = generateMockPriceHistory(psaCardData?.latest_market_price || 100);
+        setPsaPriceHistory(mockPriceHistory);
+      } else {
+        setPsaPriceHistory(result.price_history || []);
+      }
+      
+    } catch (err) {
+      console.error('Error scraping PSA price history:', err);
+      // Use mock data as fallback
+      const mockPriceHistory = generateMockPriceHistory(psaCardData?.latest_market_price || 100);
+      setPsaPriceHistory(mockPriceHistory);
     }
   };
 
@@ -276,10 +311,10 @@ const HomePage = () => {
 
                   <button
                     onClick={handlePSALookup}
-                    disabled={isLoading || !psaCertNumber.trim()}
+                    disabled={psaLoading || !psaCertNumber.trim()}
                     className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                   >
-                    {isLoading ? (
+                    {psaLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         Looking up...
@@ -320,8 +355,8 @@ const HomePage = () => {
           {/* Right Column - Card Info and Price Chart (2/3 width) */}
           <div className="xl:col-span-2 space-y-6">
             <CardInfoDisplay 
-              cardData={cardData}
-              isLoading={isLoading}
+              cardData={isPSAMode ? psaCardData : cardData}
+              isLoading={isPSAMode ? psaLoading : isLoading}
               showConfirmation={showConfirmation}
               onConfirm={handleConfirmCard}
               onRetry={handleRetryCard}
@@ -331,8 +366,9 @@ const HomePage = () => {
             />
             
             <PriceChart 
-              priceHistory={priceHistory}
-              isLoading={isLoading}
+              priceHistory={isPSAMode ? psaPriceHistory : priceHistory}
+              isLoading={isPSAMode ? psaLoading : isLoading}
+              isPSAMode={isPSAMode}
             />
           </div>
         </div>

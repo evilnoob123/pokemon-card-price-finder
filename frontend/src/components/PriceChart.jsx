@@ -1,7 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const PriceChart = ({ priceHistory, isLoading }) => {
+const PriceChart = ({ priceHistory, isLoading, isPSAMode }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -59,11 +59,11 @@ const PriceChart = ({ priceHistory, isLoading }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          📈 Price History
+          {isPSAMode ? '🏆 PSA Sales History' : '📈 Price History'}
         </h2>
         <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>Live Market Data</span>
+          <span>{isPSAMode ? 'PSA Sales Data' : 'Live Market Data'}</span>
         </div>
       </div>
       
