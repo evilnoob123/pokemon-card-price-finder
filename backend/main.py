@@ -1,19 +1,11 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import uvicorn
 import os
-import sys
 from dotenv import load_dotenv
-
-# Add the current directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables
 load_dotenv()
-
-# Import routes
-from routes.card_scan import router as card_scan_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -32,9 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(card_scan_router, prefix="/api", tags=["card-scan"])
-
 @app.get("/")
 async def root():
     return {
@@ -47,10 +36,25 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
+@app.post("/api/card/scan")
+async def scan_card():
+    """Mock card scan endpoint for testing"""
+    return {
+        "card_name": "Pikachu",
+        "set_name": "Base Set",
+        "rarity": "Common",
+        "image_url": "https://images.pokemontcg.io/base1/58_hires.png",
+        "card_number": "58",
+        "hp": "40",
+        "types": ["Lightning"],
+        "latest_market_price": 2.50,
+        "price_history": []
+    }
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=False
     )

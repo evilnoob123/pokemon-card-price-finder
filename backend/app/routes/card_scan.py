@@ -5,8 +5,8 @@ import os
 from typing import Optional
 import logging
 
-from app.services.ocr_service_simple import OCRService
-from app.services.price_service import PriceService
+from services.ocr_service_simple import OCRService
+from services.price_service import PriceService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
