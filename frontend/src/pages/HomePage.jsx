@@ -37,7 +37,7 @@ const HomePage = () => {
 
       setCardData(result);
       
-      // Simulate price history data (in real app, this would come from the API)
+      // Generate mock price history for demonstration
       if (result.card_name) {
         const mockPriceHistory = generateMockPriceHistory(result.latest_market_price);
         setPriceHistory(mockPriceHistory);
