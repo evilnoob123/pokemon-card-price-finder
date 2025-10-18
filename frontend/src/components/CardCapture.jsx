@@ -128,10 +128,15 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-        📸 Capture Pokémon Card
-      </h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          📸 Capture Pokémon Card
+        </h2>
+        <p className="text-sm text-gray-600">
+          Upload an image or take a photo to get started
+        </p>
+      </div>
 
       {/* Image Preview */}
       {previewUrl && (
@@ -140,11 +145,11 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             <img
               src={previewUrl}
               alt="Pokémon card preview"
-              className="w-full h-64 object-contain rounded-lg border-2 border-gray-200 bg-gray-50"
+              className="w-full h-48 object-contain rounded-lg border border-gray-200 bg-gray-50"
             />
             <button
               onClick={clearImage}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors text-sm"
               aria-label="Remove image"
             >
               ×
@@ -161,7 +166,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             autoPlay
             playsInline
             muted
-            className="w-full h-64 object-cover rounded-lg"
+            className="w-full h-48 object-cover rounded-lg"
             style={{ transform: 'scaleX(-1)' }} // Mirror the video for better UX
           />
           <canvas ref={canvasRef} className="hidden" />
@@ -171,16 +176,16 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             📱 Position your Pokémon card in the frame
           </div>
           
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
             <button
               onClick={capturePhoto}
-              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-lg"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
             >
               📷 Capture
             </button>
             <button
               onClick={closeCamera}
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium shadow-lg"
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm"
             >
               Cancel
             </button>
@@ -193,7 +198,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
         <div className="space-y-3">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium flex items-center justify-center gap-2 shadow-sm"
           >
             📁 Upload Image
           </button>
@@ -202,12 +207,12 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
           {navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? (
             <button
               onClick={openCamera}
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium flex items-center justify-center gap-2 shadow-sm"
             >
               📷 Take Photo
             </button>
           ) : (
-            <div className="w-full bg-gray-300 text-gray-600 py-3 px-4 rounded-lg text-center text-sm">
+            <div className="w-full bg-gray-100 text-gray-500 py-3 px-4 rounded-lg text-center text-sm">
               📷 Camera not supported on this device
             </div>
           )}
@@ -228,7 +233,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
         <button
           onClick={sendToAPI}
           disabled={isLoading}
-          className="w-full mt-4 bg-purple-500 text-white py-3 px-4 rounded-lg hover:bg-purple-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full mt-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
         >
           {isLoading ? (
             <>
@@ -243,18 +248,16 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
 
       {/* Error Message */}
       {error && (
-        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
           {error}
         </div>
       )}
 
       {/* Instructions */}
-      <div className="mt-6 text-sm text-gray-600 text-center">
-        <p className="mb-2">📱 Upload an image or take a photo of your Pokémon card</p>
-        <p className="text-xs mb-2">Make sure the card is well-lit and clearly visible</p>
-        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          <p className="font-semibold mb-1">📱 Mobile Camera Tips:</p>
-          <ul className="text-left space-y-1">
+      <div className="mt-6 text-xs text-gray-500">
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <p className="font-semibold mb-2 text-gray-700">📱 Mobile Camera Tips:</p>
+          <ul className="space-y-1 text-left">
             <li>• Allow camera permissions when prompted</li>
             <li>• Use the back camera for better quality</li>
             <li>• Ensure good lighting</li>

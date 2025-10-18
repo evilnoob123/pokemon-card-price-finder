@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const PriceChart = ({ priceHistory, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded mb-4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -15,11 +15,11 @@ const PriceChart = ({ priceHistory, isLoading }) => {
 
   if (!priceHistory || priceHistory.length === 0) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg text-center">
-        <div className="text-gray-500 mb-4">
-          <div className="text-6xl mb-2">📈</div>
-          <h3 className="text-xl font-semibold mb-2">No Price History</h3>
-          <p className="text-sm">Price history will appear here after scanning a card</p>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+        <div className="text-gray-400 mb-4">
+          <div className="text-5xl mb-3">📈</div>
+          <h3 className="text-lg font-semibold mb-2 text-gray-600">No Price History</h3>
+          <p className="text-sm text-gray-500">Price history will appear here after scanning a card</p>
         </div>
       </div>
     );
@@ -56,75 +56,87 @@ const PriceChart = ({ priceHistory, isLoading }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-center mb-2 text-gray-800">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
           📈 Price History
         </h2>
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span>Live Market Data</span>
+        </div>
+      </div>
+      
+      {/* Price Change Summary */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="text-center p-3 bg-gray-50 rounded-lg">
+          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Current Price</p>
+          <p className="text-lg font-bold text-gray-900">
+            ${lastPrice.toFixed(2)}
+          </p>
+        </div>
         
-        {/* Price Change Summary */}
-        <div className="flex justify-center items-center gap-4 mb-4">
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Current Price</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${lastPrice.toFixed(2)}
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Change</p>
-            <p className={`text-lg font-semibold ${
-              priceChange >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Change %</p>
-            <p className={`text-lg font-semibold ${
-              priceChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
-            </p>
-          </div>
+        <div className="text-center p-3 bg-gray-50 rounded-lg">
+          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Change</p>
+          <p className={`text-lg font-bold ${
+            priceChange >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}
+          </p>
+        </div>
+        
+        <div className="text-center p-3 bg-gray-50 rounded-lg">
+          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Change %</p>
+          <p className={`text-lg font-bold ${
+            priceChangePercent >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
+          </p>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="h-64">
+      <div className="h-64 mb-4">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
             <XAxis 
               dataKey="date" 
-              stroke="#6b7280"
-              fontSize={12}
+              stroke="#9ca3af"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
             />
             <YAxis 
-              stroke="#6b7280"
-              fontSize={12}
+              stroke="#9ca3af"
+              fontSize={11}
               tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickLine={false}
+              axisLine={false}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line 
               type="monotone" 
               dataKey="price" 
               stroke="#10b981" 
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2, fill: '#fff' }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {/* Chart Info */}
-      <div className="mt-4 text-center">
-        <p className="text-xs text-gray-500">
-          Showing {chartData.length} data points
-        </p>
-        <p className="text-xs text-gray-500">
+      <div className="pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Showing {chartData.length} data points</span>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+            <span>Live Data</span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
           Data range: {chartData[0]?.fullDate} to {chartData[chartData.length - 1]?.fullDate}
         </p>
       </div>

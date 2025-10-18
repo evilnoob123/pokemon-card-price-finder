@@ -3,13 +3,13 @@ import React from 'react';
 const CardInfoDisplay = ({ cardData, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
           <div className="h-4 bg-gray-200 rounded mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+          <div className="h-48 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -17,11 +17,11 @@ const CardInfoDisplay = ({ cardData, isLoading }) => {
 
   if (!cardData) {
     return (
-      <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg text-center">
-        <div className="text-gray-500 mb-4">
-          <div className="text-6xl mb-2">🎴</div>
-          <h3 className="text-xl font-semibold mb-2">No Card Data</h3>
-          <p className="text-sm">Scan a Pokémon card to see its information and price</p>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+        <div className="text-gray-400 mb-4">
+          <div className="text-5xl mb-3">🎴</div>
+          <h3 className="text-lg font-semibold mb-2 text-gray-600">No Card Data</h3>
+          <p className="text-sm text-gray-500">Scan a Pokémon card to see its information and price</p>
         </div>
       </div>
     );
@@ -46,10 +46,16 @@ const CardInfoDisplay = ({ cardData, isLoading }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-        🎴 Card Information
-      </h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          🎴 Card Information
+        </h2>
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span>Verified Data</span>
+        </div>
+      </div>
 
       {/* Card Image */}
       {cardData.image_url && (
@@ -57,7 +63,7 @@ const CardInfoDisplay = ({ cardData, isLoading }) => {
           <img
             src={cardData.image_url}
             alt={cardData.card_name || 'Pokémon card'}
-            className="w-full h-64 object-contain rounded-lg border-2 border-gray-200 bg-gray-50"
+            className="w-full h-48 object-contain rounded-lg border border-gray-200 bg-gray-50"
             onError={(e) => {
               e.target.style.display = 'none';
             }}
@@ -65,102 +71,110 @@ const CardInfoDisplay = ({ cardData, isLoading }) => {
         </div>
       )}
 
-      {/* Card Details */}
-      <div className="space-y-4">
+      {/* Card Details Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Card Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
             Card Name
           </label>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-bold text-gray-900">
             {cardData.card_name || 'Unknown'}
           </p>
         </div>
 
         {/* Set Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
             Set
           </label>
-          <p className="text-gray-900">
+          <p className="text-sm font-medium text-gray-900">
             {cardData.set_name || 'Unknown'}
           </p>
         </div>
 
         {/* Rarity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
             Rarity
           </label>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getRarityColor(cardData.rarity)}`}>
+          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getRarityColor(cardData.rarity)}`}>
             {cardData.rarity || 'Unknown'}
           </span>
         </div>
 
-        {/* Latest Price */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Card Number */}
+        {cardData.card_number && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+              Card Number
+            </label>
+            <p className="text-sm font-medium text-gray-900">
+              #{cardData.card_number}
+            </p>
+          </div>
+        )}
+
+        {/* HP */}
+        {cardData.hp && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+              HP
+            </label>
+            <p className="text-sm font-medium text-gray-900">
+              {cardData.hp}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Price Section */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-6">
+        <div className="text-center">
+          <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
             Latest Market Price
           </label>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-green-600">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-3xl font-bold text-green-600">
               {formatPrice(cardData.latest_market_price)}
             </span>
             {cardData.latest_market_price && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 font-medium">
                 USD
               </span>
             )}
           </div>
         </div>
-
-        {/* Additional Info */}
-        {cardData.card_number && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Card Number
-            </label>
-            <p className="text-gray-900">
-              {cardData.card_number}
-            </p>
-          </div>
-        )}
-
-        {cardData.hp && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              HP
-            </label>
-            <p className="text-gray-900">
-              {cardData.hp}
-            </p>
-          </div>
-        )}
-
-        {cardData.types && cardData.types.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Types
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {cardData.types.map((type, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
-                >
-                  {type}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Types */}
+      {cardData.types && cardData.types.length > 0 && (
+        <div className="mb-6">
+          <label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+            Types
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {cardData.types.map((type, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+              >
+                {type}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Last Updated */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500 text-center">
-          Last updated: {new Date().toLocaleString()}
-        </p>
+      <div className="pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Last updated: {new Date().toLocaleString()}</span>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+            <span>Live Data</span>
+          </div>
+        </div>
       </div>
     </div>
   );

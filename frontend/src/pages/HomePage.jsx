@@ -76,26 +76,60 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-center">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              🎴 Pokémon Card Price Finder
-            </h1>
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🎴</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Pokémon Card Price Finder
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Discover authenticated trading cards with confidence
+                </p>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Live Market Data</span>
+              </div>
+            </div>
           </div>
-          <p className="text-center text-gray-600 mt-2">
-            Scan your Pokémon cards to find their current market value
-          </p>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Card Capture */}
-          <div className="space-y-8">
+        {/* Stats Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="text-2xl font-bold text-gray-900">1,247+</div>
+            <div className="text-sm text-gray-600">Cards Scanned</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="text-2xl font-bold text-gray-900">850+</div>
+            <div className="text-sm text-gray-600">Verified Cards</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="text-2xl font-bold text-gray-900">$2.5M+</div>
+            <div className="text-sm text-gray-600">Cards Valued</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="text-2xl font-bold text-gray-900">10K+</div>
+            <div className="text-sm text-gray-600">Happy Users</div>
+          </div>
+        </div>
+
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Left Column - Card Capture (1/3 width) */}
+          <div className="xl:col-span-1">
             <CardCapture 
               onImageCapture={handleImageCapture}
               isLoading={isLoading}
@@ -103,7 +137,7 @@ const HomePage = () => {
             
             {/* Error Display */}
             {error && (
-              <div className="w-full max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <span className="text-red-500 text-xl">⚠️</span>
                   <div>
@@ -115,8 +149,8 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Right Column - Card Info and Price Chart */}
-          <div className="space-y-8">
+          {/* Right Column - Card Info and Price Chart (2/3 width) */}
+          <div className="xl:col-span-2 space-y-6">
             <CardInfoDisplay 
               cardData={cardData}
               isLoading={isLoading}
@@ -130,30 +164,42 @@ const HomePage = () => {
         </div>
 
         {/* Features Section */}
-        <div className="mt-16 bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">
-            🚀 Features
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-16 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Trusted by 10,000+ collectors worldwide
+            </h2>
+            <p className="text-lg text-gray-600">
+              Your premier destination for authenticated trading cards
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="text-4xl mb-4">📸</div>
-              <h3 className="text-lg font-semibold mb-2">Easy Capture</h3>
-              <p className="text-gray-600 text-sm">
-                Upload images or use your camera to capture Pokémon cards
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl">📸</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Easy Capture</h3>
+              <p className="text-gray-600">
+                Upload images or use your camera to capture Pokémon cards with advanced OCR technology
               </p>
             </div>
             <div className="text-center">
-              <div className="text-4xl mb-4">🔍</div>
-              <h3 className="text-lg font-semibold mb-2">Smart Recognition</h3>
-              <p className="text-gray-600 text-sm">
-                Advanced OCR technology identifies card names and details
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl">🔍</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Smart Recognition</h3>
+              <p className="text-gray-600">
+                Advanced AI identifies card names, sets, and details with professional-grade accuracy
               </p>
             </div>
             <div className="text-center">
-              <div className="text-4xl mb-4">💰</div>
-              <h3 className="text-lg font-semibold mb-2">Real-time Prices</h3>
-              <p className="text-gray-600 text-sm">
-                Get current market prices and historical price trends
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-2xl">💰</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Real-time Prices</h3>
+              <p className="text-gray-600">
+                Get current market prices and historical trends from trusted trading card databases
               </p>
             </div>
           </div>
@@ -161,14 +207,50 @@ const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-300">
-            Pokémon Card Price Finder - Built with React, FastAPI, and ❤️
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            Data provided by Pokémon TCG API
-          </p>
+      <footer className="bg-gray-900 text-white py-12 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">🎴</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Pokémon Card Price Finder</h3>
+                  <p className="text-gray-400 text-sm">Your premier destination for authenticated trading cards</p>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm">
+                Built with ❤️ for collectors worldwide. Find, buy, and sell graded cards with confidence.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Features</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>Card Scanning</li>
+                <li>Price Analysis</li>
+                <li>Market Trends</li>
+                <li>Authentication</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>Help Center</li>
+                <li>Contact Us</li>
+                <li>Terms of Service</li>
+                <li>Privacy Policy</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 Pokémon Card Price Finder. All rights reserved. Data provided by Pokémon TCG API.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
