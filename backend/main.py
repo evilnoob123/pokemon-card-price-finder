@@ -11,6 +11,8 @@ import asyncio
 from bs4 import BeautifulSoup
 from datetime import datetime
 import urllib3
+import aiohttp
+import ssl
 
 # Disable SSL warnings for PSA API calls
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -70,16 +72,21 @@ async def test_psa_api():
         logger.info(f"Testing PSA API with certificate: {test_cert}")
         logger.info(f"PSA API URL: {psa_url}")
         
-        response = requests.get(psa_url, headers=headers, timeout=10, verify=False)
+        # Use aiohttp with SSL context disabled for PSA API calls
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
         
-        return {
-            "status": "success",
-            "certificate": test_cert,
-            "url": psa_url,
-            "response_status": response.status_code,
-            "response_headers": dict(response.headers),
-            "response_text": response.text[:500] if response.text else "No response text"
-        }
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+            async with session.get(psa_url, headers=headers, timeout=10) as response:
+                return {
+                    "status": "success",
+                    "certificate": test_cert,
+                    "url": psa_url,
+                    "response_status": response.status,
+                    "response_headers": dict(response.headers),
+                    "response_text": await response.text()
+                }
         
     except Exception as e:
         logger.error(f"PSA API test error: {str(e)}")
@@ -191,28 +198,36 @@ async def psa_lookup(request_data: dict):
         logger.info(f"PSA API Headers: {headers}")
         
         try:
-            # Disable SSL verification for PSA API calls (Render environment issue)
-            response = requests.get(psa_url, headers=headers, timeout=10, verify=False)
-            logger.info(f"PSA API Response Status: {response.status_code}")
-            logger.info(f"PSA API Response Headers: {dict(response.headers)}")
+            # Use aiohttp with SSL context disabled for PSA API calls
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
             
-            if response.status_code == 404:
-                logger.warning(f"Certificate {cert_number} not found (404)")
-                return {
-                    "error": "Sorry! This certificate number cannot be found.",
-                    "status": "error"
-                }
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+                async with session.get(psa_url, headers=headers, timeout=10) as response:
+                    logger.info(f"PSA API Response Status: {response.status}")
+                    logger.info(f"PSA API Response Headers: {dict(response.headers)}")
+                    
+                    if response.status == 404:
+                        logger.warning(f"Certificate {cert_number} not found (404)")
+                        return {
+                            "error": "Sorry! This certificate number cannot be found.",
+                            "status": "error"
+                        }
+                    
+                    if response.status != 200:
+                        logger.error(f"PSA API returned status {response.status}")
+                        return {
+                            "error": "Sorry! This certificate number cannot be found.",
+                            "status": "error"
+                        }
+                    
+                    psa_data = await response.json()
+                    logger.info(f"PSA API response received for certificate: {cert_number}")
+                    logger.info(f"PSA API response data: {psa_data}")
             
-            response.raise_for_status()
-            psa_data = response.json()
-            
-            logger.info(f"PSA API response received for certificate: {cert_number}")
-            logger.info(f"PSA API response data: {psa_data}")
-            
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"PSA API error for certificate {cert_number}: {str(e)}")
-            logger.error(f"Response status: {getattr(e.response, 'status_code', 'N/A')}")
-            logger.error(f"Response text: {getattr(e.response, 'text', 'N/A')}")
             return {
                 "error": "Sorry! This certificate number cannot be found.",
                 "status": "error"
