@@ -31,33 +31,55 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
         throw new Error('Camera not supported on this device');
       }
 
-      // Request camera permissions with mobile-optimized settings
+      // Request camera permissions with simpler, more compatible settings
       const constraints = {
         video: {
-          facingMode: { ideal: 'environment' }, // Use back camera
-          width: { ideal: 1920, min: 640 },
-          height: { ideal: 1080, min: 480 },
-          aspectRatio: { ideal: 16/9 }
+          facingMode: 'environment', // Use back camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         },
         audio: false
       };
 
+      console.log('Requesting camera access...');
+      
       // Try to get user media
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('Camera access granted, setting up video...');
       
       setStream(mediaStream);
       setIsCameraOpen(true);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play().catch(err => {
-            console.warn('Video autoplay failed:', err);
-          });
-        };
-      }
+      // Wait for the next tick to ensure the video element is rendered
+      setTimeout(() => {
+        if (videoRef.current) {
+          console.log('Setting video source...');
+          videoRef.current.srcObject = mediaStream;
+          
+          // Wait for video to be ready
+          videoRef.current.onloadedmetadata = () => {
+            console.log('Video metadata loaded, starting playback...');
+            videoRef.current.play().catch(err => {
+              console.warn('Video autoplay failed:', err);
+              // Try to play again after user interaction
+              setTimeout(() => {
+                videoRef.current.play().catch(console.warn);
+              }, 100);
+            });
+          };
+          
+          videoRef.current.oncanplay = () => {
+            console.log('Video can play');
+          };
+          
+          videoRef.current.onerror = (e) => {
+            console.error('Video error:', e);
+            setError('Video playback failed. Please try again.');
+          };
+        }
+      }, 100);
+      
     } catch (err) {
       console.error('Error accessing camera:', err);
       
@@ -71,7 +93,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
       } else if (err.name === 'NotReadableError') {
         setError('Camera is being used by another application.');
       } else {
-        setError('Unable to access camera. Please check permissions and try again.');
+        setError(`Unable to access camera: ${err.message}`);
       }
     }
   };
@@ -85,26 +107,69 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
+    console.log('Attempting to capture photo...');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref not available');
+      setError('Camera not ready. Please try again.');
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    
+    if (!video.videoWidth || !video.videoHeight) {
+      console.error('Video dimensions not available');
+      setError('Video not ready. Please wait and try again.');
+      return;
+    }
+
+    console.log(`Video dimensions: ${video.videoWidth}x${video.videoHeight}`);
+    
+    const context = canvas.getContext('2d');
+    
+    if (!context) {
+      console.error('Could not get canvas context');
+      setError('Failed to capture image. Please try again.');
+      return;
+    }
+    
+    try {
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       
-      if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'pokemon-card.jpg', { type: 'image/jpeg' });
-            setSelectedImage(file);
-            setPreviewUrl(URL.createObjectURL(blob));
-            setError(null);
-            closeCamera();
-          }
-        }, 'image/jpeg', 0.8);
-      }
+      // Draw the video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      console.log('Image drawn to canvas, converting to blob...');
+      
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          console.log('Blob created successfully, size:', blob.size);
+          
+          // Create file from blob
+          const file = new File([blob], 'pokemon-card.jpg', { type: 'image/jpeg' });
+          
+          // Set the captured image
+          setSelectedImage(file);
+          setPreviewUrl(URL.createObjectURL(blob));
+          setError(null);
+          
+          console.log('Photo captured successfully');
+          
+          // Close camera
+          closeCamera();
+        } else {
+          console.error('Failed to create blob from canvas');
+          setError('Failed to capture image. Please try again.');
+        }
+      }, 'image/jpeg', 0.8);
+      
+    } catch (err) {
+      console.error('Error during photo capture:', err);
+      setError('Failed to capture image. Please try again.');
     }
   };
 
@@ -166,7 +231,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             autoPlay
             playsInline
             muted
-            className="w-full h-48 object-cover rounded-lg"
+            className="w-full h-48 object-cover rounded-lg bg-gray-900"
             style={{ transform: 'scaleX(-1)' }} // Mirror the video for better UX
           />
           <canvas ref={canvasRef} className="hidden" />
@@ -176,10 +241,21 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             📱 Position your Pokémon card in the frame
           </div>
           
+          {/* Loading indicator */}
+          {!stream && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 rounded-lg">
+              <div className="text-white text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-sm">Starting camera...</p>
+              </div>
+            </div>
+          )}
+          
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
             <button
               onClick={capturePhoto}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+              disabled={!stream}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               📷 Capture
             </button>
