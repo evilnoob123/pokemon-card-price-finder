@@ -214,19 +214,25 @@ async def psa_lookup(request_data: dict):
             }
         
         # Extract card information from PSA data
+        # PSA API returns data in a "PSACert" object
+        psa_cert = psa_data.get("PSACert", {})
+        
         card_info = {
-            "card_name": psa_data.get("cardName", "Unknown"),
-            "set_name": psa_data.get("setName", "Unknown"),
-            "psa_grade": psa_data.get("grade", "Unknown"),
-            "psa_cert_number": cert_number,
-            "certification_date": psa_data.get("certificationDate", "Unknown"),
-            "card_condition": psa_data.get("cardCondition", "Unknown"),
-            "rarity": psa_data.get("rarity", "Unknown"),
-            "card_number": psa_data.get("cardNumber", "Unknown"),
-            "image_url": psa_data.get("imageUrl", ""),
+            "card_name": psa_cert.get("Subject", "Unknown"),
+            "set_name": psa_cert.get("Brand", "Unknown"),
+            "psa_grade": psa_cert.get("CardGrade", "Unknown"),
+            "psa_cert_number": psa_cert.get("CertNumber", cert_number),
+            "certification_date": "Unknown",  # Not provided in API response
+            "card_condition": psa_cert.get("GradeDescription", "Unknown"),
+            "rarity": psa_cert.get("Variety", "Unknown"),
+            "card_number": psa_cert.get("CardNumber", "Unknown"),
+            "image_url": "",  # Not provided in API response
             "latest_market_price": 0,  # Will be updated by scraping
             "price_history": [],
-            "is_psa_card": True
+            "is_psa_card": True,
+            "year": psa_cert.get("Year", "Unknown"),
+            "total_population": psa_cert.get("TotalPopulation", 0),
+            "population_higher": psa_cert.get("PopulationHigher", 0)
         }
         
         # Start price scraping in background

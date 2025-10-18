@@ -177,6 +177,42 @@ const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onR
                 </p>
               </div>
             )}
+
+            {/* Year */}
+            {cardData.year && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Year
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.year}
+                </p>
+              </div>
+            )}
+
+            {/* Total Population */}
+            {cardData.total_population && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Total Population
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.total_population.toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {/* Population Higher */}
+            {cardData.population_higher && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Higher Grades
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.population_higher.toLocaleString()}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
