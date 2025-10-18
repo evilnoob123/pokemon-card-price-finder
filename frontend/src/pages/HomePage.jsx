@@ -19,7 +19,7 @@ const HomePage = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pokemoncardpricefinder.onrender.com';
       const response = await fetch(`${apiUrl}/api/card/scan`, {
         method: 'POST',
         body: formData,
