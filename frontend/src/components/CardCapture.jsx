@@ -31,12 +31,13 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
         throw new Error('Camera not supported on this device');
       }
 
-      // Request camera permissions with simpler, more compatible settings
+      // Request camera permissions with portrait orientation
       const constraints = {
         video: {
           facingMode: 'environment', // Use back camera
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 720 },   // Portrait: height > width
+          height: { ideal: 1280 },
+          aspectRatio: { ideal: 9/16 } // Portrait aspect ratio
         },
         audio: false
       };
@@ -135,12 +136,41 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
     }
     
     try {
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Get the video element's display dimensions (what user sees)
+      const videoRect = video.getBoundingClientRect();
+      const videoDisplayWidth = videoRect.width;
+      const videoDisplayHeight = videoRect.height;
       
-      // Draw the video frame to canvas
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Get the actual video stream dimensions
+      const videoStreamWidth = video.videoWidth;
+      const videoStreamHeight = video.videoHeight;
+      
+      console.log(`Video display: ${videoDisplayWidth}x${videoDisplayHeight}`);
+      console.log(`Video stream: ${videoStreamWidth}x${videoStreamHeight}`);
+      
+      // Set canvas to match the display dimensions (what user sees)
+      canvas.width = videoDisplayWidth;
+      canvas.height = videoDisplayHeight;
+      
+      // Calculate scaling factors to crop the video stream to match display
+      const scaleX = videoStreamWidth / videoDisplayWidth;
+      const scaleY = videoStreamHeight / videoDisplayHeight;
+      const scale = Math.max(scaleX, scaleY); // Use the larger scale to ensure we crop properly
+      
+      // Calculate the source rectangle to crop from the video stream
+      const sourceWidth = videoDisplayWidth * scale;
+      const sourceHeight = videoDisplayHeight * scale;
+      const sourceX = (videoStreamWidth - sourceWidth) / 2;
+      const sourceY = (videoStreamHeight - sourceHeight) / 2;
+      
+      console.log(`Capture source: ${sourceX}, ${sourceY}, ${sourceWidth}, ${sourceHeight}`);
+      
+      // Draw the cropped video frame to canvas (exactly what user sees)
+      context.drawImage(
+        video,
+        sourceX, sourceY, sourceWidth, sourceHeight, // Source rectangle
+        0, 0, canvas.width, canvas.height // Destination rectangle
+      );
       
       console.log('Image drawn to canvas, converting to blob...');
       
@@ -165,7 +195,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
           console.error('Failed to create blob from canvas');
           setError('Failed to capture image. Please try again.');
         }
-      }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 0.9); // Higher quality for better results
       
     } catch (err) {
       console.error('Error during photo capture:', err);
@@ -210,7 +240,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             <img
               src={previewUrl}
               alt="Pokémon card preview"
-              className="w-full h-48 object-contain rounded-lg border border-gray-200 bg-gray-50"
+              className="w-full h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
             />
             <button
               onClick={clearImage}
@@ -231,7 +261,7 @@ const CardCapture = ({ onImageCapture, isLoading }) => {
             autoPlay
             playsInline
             muted
-            className="w-full h-48 object-cover rounded-lg bg-gray-900"
+            className="w-full h-64 object-cover rounded-lg bg-gray-900"
             style={{ transform: 'scaleX(-1)' }} // Mirror the video for better UX
           />
           <canvas ref={canvasRef} className="hidden" />
