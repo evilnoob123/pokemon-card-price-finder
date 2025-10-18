@@ -180,18 +180,19 @@ const HomePage = () => {
       
       if (result.error) {
         console.warn('PSA price scraping failed:', result.error);
-        // Use mock data as fallback
-        const mockPriceHistory = generateMockPriceHistory(psaCardData?.latest_market_price || 100);
-        setPsaPriceHistory(mockPriceHistory);
+        // Show error message instead of mock data
+        setError(`Price History: ${result.error}`);
+        setPsaPriceHistory([]);
       } else {
         setPsaPriceHistory(result.price_history || []);
+        setError(null); // Clear any previous errors
       }
       
     } catch (err) {
       console.error('Error scraping PSA price history:', err);
-      // Use mock data as fallback
-      const mockPriceHistory = generateMockPriceHistory(psaCardData?.latest_market_price || 100);
-      setPsaPriceHistory(mockPriceHistory);
+      // Show error message instead of mock data
+      setError(`Price History: Unable to retrieve sales data. ${err.message}`);
+      setPsaPriceHistory([]);
     }
   };
 

@@ -17,9 +17,16 @@ const PriceChart = ({ priceHistory, isLoading, isPSAMode }) => {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
         <div className="text-gray-400 mb-4">
-          <div className="text-5xl mb-3">📈</div>
-          <h3 className="text-lg font-semibold mb-2 text-gray-600">No Price History</h3>
-          <p className="text-sm text-gray-500">Price history will appear here after scanning a card</p>
+          <div className="text-5xl mb-3">{isPSAMode ? '🏆' : '📈'}</div>
+          <h3 className="text-lg font-semibold mb-2 text-gray-600">
+            {isPSAMode ? 'No PSA Sales History' : 'No Price History'}
+          </h3>
+          <p className="text-sm text-gray-500">
+            {isPSAMode 
+              ? 'Sales data will appear here once a PSA certificate is looked up' 
+              : 'Price history will appear here after scanning a card'
+            }
+          </p>
         </div>
       </div>
     );
