@@ -32,7 +32,7 @@ app = FastAPI(
 )
 
 # Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://pokemon-card-price-finder.vercel.app,https://pokemon-card-price-finder-q69lulmee-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-qj6cbqiq0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-bjb5st0g0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-5x5jvg0mv-ctrl-collectibles.vercel.app").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://pokemon-card-price-finder.vercel.app,https://pokemon-card-price-finder-q69lulmee-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-qj6cbqiq0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-bjb5st0g0-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-5x5jvg0mv-ctrl-collectibles.vercel.app,https://pokemon-card-price-finder-6v3s9rvxg-ctrl-collectibles.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -255,8 +255,15 @@ async def psa_lookup(request_data: dict):
             "population_higher": psa_cert.get("PopulationHigher", 0)
         }
         
-        # Start price scraping in background
-        asyncio.create_task(scrape_psa_prices(cert_number, card_info))
+        # Get PSA card image
+        try:
+            image_url = await get_psa_card_image(cert_number)
+            if image_url:
+                card_info["image_url"] = image_url
+                logger.info(f"PSA card image retrieved for certificate: {cert_number}")
+        except Exception as e:
+            logger.warning(f"Failed to get PSA card image for certificate {cert_number}: {str(e)}")
+            card_info["image_url"] = ""
         
         logger.info(f"PSA lookup completed for certificate: {cert_number}")
         
@@ -268,6 +275,64 @@ async def psa_lookup(request_data: dict):
             "error": f"Internal server error: {str(e)}",
             "status": "error"
         }
+
+async def get_psa_card_image(cert_number):
+    """
+    Get PSA card image URL for a specific certificate number.
+    """
+    try:
+        # PSA API Token (hardcoded as requested)
+        psa_token = "F8eGWk5nCAKONQ4hKNvK6I6QXuBWQH4IQHWS0cOxsU0dGrgO7HlE2MxEQu8INI3BZJscCAVB3ukrTU1EUOZGSdntk8zae9sQHEsF0OsqYs11fZC1tUzyibskcPETsgyIgo4MoEa8qYe40qPeepyZqvNCT6f2VM1EKvo-DZOVr946iIM0BF693CsiNsm8O86ANJlUXBeN453b1LTTe-7h43oO5C8SbNAxBGm2dWQr4YYXrK9J9vUIyZIQ6Wm3pRVmNk2T8r9O7XWZru6AUlo6qlRf9lv6u9knt27PPzfV8X2GHckp"
+        
+        # Call PSA Images API
+        psa_images_url = f"https://api.psacard.com/publicapi/cert/GetImagesByCertNumber/{cert_number}"
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {psa_token}"
+        }
+        
+        logger.info(f"Calling PSA Images API for certificate: {cert_number}")
+        
+        # Use aiohttp with SSL context disabled
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+            async with session.get(psa_images_url, headers=headers, timeout=10) as response:
+                logger.info(f"PSA Images API Response Status: {response.status}")
+                
+                if response.status == 404:
+                    logger.warning(f"No images found for certificate {cert_number}")
+                    return None
+                
+                if response.status != 200:
+                    logger.error(f"PSA Images API returned status {response.status}")
+                    return None
+                
+                images_data = await response.json()
+                logger.info(f"PSA Images API response: {images_data}")
+                
+                # Extract image URL from response
+                if isinstance(images_data, list) and len(images_data) > 0:
+                    # If it's a list, take the first image
+                    first_image = images_data[0]
+                    if isinstance(first_image, dict) and 'url' in first_image:
+                        return first_image['url']
+                    elif isinstance(first_image, str):
+                        return first_image
+                elif isinstance(images_data, dict):
+                    # If it's a dict, look for common image URL fields
+                    for field in ['url', 'imageUrl', 'image_url', 'frontImage', 'front_image']:
+                        if field in images_data and images_data[field]:
+                            return images_data[field]
+                
+                logger.warning(f"No valid image URL found in PSA Images API response for certificate {cert_number}")
+                return None
+                
+    except Exception as e:
+        logger.error(f"Error getting PSA card image for certificate {cert_number}: {str(e)}")
+        return None
 
 async def scrape_psa_prices(cert_number, card_info):
     """
@@ -483,14 +548,14 @@ async def psa_price_history(request_data: dict):
         else:
             logger.warning(f"No price history found for certificate: {cert_number}")
             return {
-                "error": "No sales history found for this certificate",
+                "error": "No sales history found for this certificate. This card may not have recent sales data available.",
                 "status": "error"
             }
             
     except Exception as e:
         logger.error(f"Error scraping PSA price history for certificate {cert_number}: {str(e)}")
         return {
-            "error": f"Failed to scrape price history: {str(e)}",
+            "error": f"Unable to retrieve sales history: {str(e)}",
             "status": "error"
         }
 
