@@ -10,6 +10,10 @@ import json
 import asyncio
 from bs4 import BeautifulSoup
 from datetime import datetime
+import urllib3
+
+# Disable SSL warnings for PSA API calls
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Load environment variables
 load_dotenv()
@@ -66,7 +70,7 @@ async def test_psa_api():
         logger.info(f"Testing PSA API with certificate: {test_cert}")
         logger.info(f"PSA API URL: {psa_url}")
         
-        response = requests.get(psa_url, headers=headers, timeout=10)
+        response = requests.get(psa_url, headers=headers, timeout=10, verify=False)
         
         return {
             "status": "success",
@@ -187,7 +191,8 @@ async def psa_lookup(request_data: dict):
         logger.info(f"PSA API Headers: {headers}")
         
         try:
-            response = requests.get(psa_url, headers=headers, timeout=10)
+            # Disable SSL verification for PSA API calls (Render environment issue)
+            response = requests.get(psa_url, headers=headers, timeout=10, verify=False)
             logger.info(f"PSA API Response Status: {response.status_code}")
             logger.info(f"PSA API Response Headers: {dict(response.headers)}")
             
@@ -263,7 +268,7 @@ async def scrape_psa_prices(cert_number, card_info):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
         
-        response = requests.get(psa_url, headers=headers, timeout=15)
+        response = requests.get(psa_url, headers=headers, timeout=15, verify=False)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'html.parser')
