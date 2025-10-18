@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onRetry, onNewScan, retryCount }) => {
+const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onRetry, onNewScan, retryCount, isPSAMode }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -49,11 +49,11 @@ const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onR
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          🎴 Card Information
+          {isPSAMode ? '🏆 PSA Graded Card' : '🎴 Card Information'}
         </h2>
         <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>Verified Data</span>
+          <span>{isPSAMode ? 'PSA Verified Data' : 'Verified Data'}</span>
         </div>
       </div>
 
@@ -125,6 +125,59 @@ const CardInfoDisplay = ({ cardData, isLoading, showConfirmation, onConfirm, onR
               {cardData.hp}
             </p>
           </div>
+        )}
+
+        {/* PSA Specific Fields */}
+        {isPSAMode && (
+          <>
+            {/* PSA Grade */}
+            {cardData.psa_grade && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  PSA Grade
+                </label>
+                <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">
+                  {cardData.psa_grade}
+                </span>
+              </div>
+            )}
+
+            {/* PSA Certificate Number */}
+            {cardData.psa_cert_number && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Certificate #
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.psa_cert_number}
+                </p>
+              </div>
+            )}
+
+            {/* Certification Date */}
+            {cardData.certification_date && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Certified Date
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.certification_date}
+                </p>
+              </div>
+            )}
+
+            {/* Card Condition */}
+            {cardData.card_condition && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                  Condition
+                </label>
+                <p className="text-sm font-medium text-gray-900">
+                  {cardData.card_condition}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

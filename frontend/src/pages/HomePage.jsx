@@ -11,6 +11,8 @@ const HomePage = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [lastImageFile, setLastImageFile] = useState(null);
+  const [isPSAMode, setIsPSAMode] = useState(false);
+  const [psaCertNumber, setPsaCertNumber] = useState('');
 
   const handleImageCapture = async (imageFile) => {
     setIsLoading(true);
@@ -108,6 +110,56 @@ const HomePage = () => {
     setError(null);
   };
 
+  const handlePSALookup = async () => {
+    if (!psaCertNumber.trim()) {
+      setError('Please enter a PSA certificate number');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setCardData(null);
+    setPriceHistory([]);
+    setShowConfirmation(false);
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pokemoncardpricefinder.onrender.com';
+      const response = await fetch(`${apiUrl}/api/card/psa-lookup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cert_number: psaCertNumber.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      setCardData(result);
+      
+      // Generate mock price history for demonstration (will be replaced by scraping)
+      if (result.card_name) {
+        const mockPriceHistory = generateMockPriceHistory(result.latest_market_price);
+        setPriceHistory(mockPriceHistory);
+      }
+      
+      // Show confirmation dialog
+      setShowConfirmation(true);
+    } catch (err) {
+      console.error('Error looking up PSA certificate:', err);
+      setError(err.message || 'Failed to lookup PSA certificate');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -159,14 +211,97 @@ const HomePage = () => {
           </div>
         </div>
 
+        {/* Mode Toggle */}
+        <div className="mb-8 flex justify-center">
+          <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+            <div className="flex">
+              <button
+                onClick={() => setIsPSAMode(false)}
+                className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  !isPSAMode 
+                    ? 'bg-blue-500 text-white shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                📸 Scan Image
+              </button>
+              <button
+                onClick={() => setIsPSAMode(true)}
+                className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  isPSAMode 
+                    ? 'bg-blue-500 text-white shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                🔍 PSA Lookup
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Left Column - Card Capture (1/3 width) */}
+          {/* Left Column - Card Capture or PSA Lookup (1/3 width) */}
           <div className="xl:col-span-1">
-            <CardCapture 
-              onImageCapture={handleImageCapture}
-              isLoading={isLoading}
-            />
+            {!isPSAMode ? (
+              <CardCapture 
+                onImageCapture={handleImageCapture}
+                isLoading={isLoading}
+              />
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    🔍 PSA Certificate Lookup
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Enter a PSA certificate number to get card details
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      PSA Certificate Number
+                    </label>
+                    <input
+                      type="text"
+                      value={psaCertNumber}
+                      onChange={(e) => setPsaCertNumber(e.target.value)}
+                      placeholder="e.g., 27790785"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handlePSALookup}
+                    disabled={isLoading || !psaCertNumber.trim()}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Looking up...
+                      </>
+                    ) : (
+                      '🔍 Lookup Certificate'
+                    )}
+                  </button>
+                </div>
+
+                <div className="mt-6 text-xs text-gray-500">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="font-semibold mb-2 text-gray-700">💡 PSA Lookup Tips:</p>
+                    <ul className="space-y-1 text-left">
+                      <li>• Enter the full certificate number</li>
+                      <li>• Numbers only, no spaces or dashes</li>
+                      <li>• Must be a valid PSA graded card</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Error Display */}
             {error && (
@@ -192,6 +327,7 @@ const HomePage = () => {
               onRetry={handleRetryCard}
               onNewScan={handleNewScan}
               retryCount={retryCount}
+              isPSAMode={isPSAMode}
             />
             
             <PriceChart 
