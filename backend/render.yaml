@@ -1,0 +1,14 @@
+# Render deployment configuration
+# This file helps Render understand how to deploy your FastAPI backend
+
+# Build command (what to run to install dependencies)
+# pip install -r requirements.txt
+
+# Start command (what to run to start the server)
+# python app/main.py
+
+# Environment variables needed:
+# POKEMON_TCG_API_KEY=your_api_key_here
+# CORS_ORIGINS=https://your-frontend-url.vercel.app
+# HOST=0.0.0.0
+# PORT=8000
